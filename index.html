@@ -737,6 +737,7 @@
                 const c = COLORS[d.grp] || COLORS.Other;
                 const isRed = ['EN', 'CR', 'VU'].includes(d.iucn);
                 const m = L.circleMarker([d.lat, d.lng], { radius: isRed ? 8 : 6, fillColor: isRed ? '#ef4444' : c, color: '#fff', weight: 1, fillOpacity: 0.85 }).addTo(state.map);
+                m.on('click', () => { state.map.flyTo([d.lat, d.lng], 10); openDive(d); });
                 state.markers.push(m);
 
                 const card = document.createElement('div');
