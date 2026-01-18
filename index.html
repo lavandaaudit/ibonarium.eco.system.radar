@@ -772,22 +772,22 @@
                     let en = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(d.sci)}`);
                     let enj = await en.json();
                     if (enj.extract) {
-                        // MyMemory has a 500 char limit for free usage
-                        let originalText = enj.extract;
-                        let textToTranslate = originalText;
-                        let isTruncated = false;
-
-                        if (originalText.length > 500) {
-                            textToTranslate = originalText.substring(0, 497) + "...";
-                            isTruncated = true;
+                        let textToTranslate = enj.extract;
+                        if (textToTranslate.length > 500) {
+                            textToTranslate = textToTranslate.substring(0, 497) + "...";
                         }
 
-                        const tr = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(textToTranslate)}&langpair=en|uk`);
-                        const trj = await tr.json();
+                        const gUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=uk&dt=t&q=${encodeURIComponent(textToTranslate)}`;
+                        const gr = await fetch(gUrl);
+                        const gj = await gr.json();
 
-                        let resultText = trj.responseData.translatedText || textToTranslate;
-                        document.getElementById('dive-text').innerText = resultText;
-                        document.getElementById('dive-badges').innerHTML += `<span class="badge badge-trans">Auto-Translated</span>`;
+                        let translated = "";
+                        if (gj && gj[0]) {
+                            translated = gj[0].map(x => x[0]).join("");
+                        }
+
+                        document.getElementById('dive-text').innerText = translated || textToTranslate;
+                        document.getElementById('dive-badges').innerHTML += `<span class="badge badge-trans">Google Translate Hub</span>`;
                     } else { document.getElementById('dive-text').innerText = "Опис не знайдено у глобальних реєстрах."; }
                 }
             } catch (e) { document.getElementById('dive-text').innerText = "Помилка синхронізації знань."; }
