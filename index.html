@@ -1,1 +1,624 @@
+<!DOCTYPE html>
+<html lang="uk">
 
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Ibonarium | eco.system.lab.live</title>
+    <meta name="description" content="Реальний моніторинг спостережень за природою. Ibonarium Lab.">
+
+    <!-- Google Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&family=JetBrains+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <style>
+        :root {
+            --bg-dark: #07090c;
+            --panel-bg: rgba(13, 17, 23, 0.9);
+            --accent-inat: #74ac00;
+            --accent-ebird: #ff9800;
+            --accent-blue: #0ea5e9;
+            --text-main: #f0f6fc;
+            --text-dim: #8b949e;
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --header-h: 70px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Outfit', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+        }
+
+        /* Header Responsive */
+        header {
+            height: var(--header-h);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            background: rgba(7, 9, 12, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--glass-border);
+            z-index: 2000;
+            flex-shrink: 0;
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            border: 2px solid var(--accent-inat);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .logo-text {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .logo-main {
+            font-size: 1.1rem;
+            font-weight: 600;
+            line-height: 1;
+        }
+
+        .logo-sub {
+            font-size: 0.6rem;
+            color: var(--accent-inat);
+            font-family: 'JetBrains Mono', monospace;
+            text-transform: uppercase;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            border: 1px solid var(--glass-border);
+        }
+
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            background: #22c55e;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+            }
+
+            70% {
+                box-shadow: 0 0 0 10px rgba(34, 197, 94, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+            }
+        }
+
+        /* Main Workspace */
+        main {
+            flex: 1;
+            display: flex;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #map {
+            flex: 1;
+            z-index: 1;
+            height: 100%;
+        }
+
+        /* Sidebar Panels */
+        .sidebar {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            bottom: 15px;
+            width: 380px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            pointer-events: none;
+        }
+
+        .sidebar>* {
+            pointer-events: auto;
+        }
+
+        /* Right Analytics Panel */
+        .analytics-panel {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            bottom: 15px;
+            width: 340px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            pointer-events: none;
+            overflow-y: auto;
+        }
+
+        .analytics-panel>* {
+            pointer-events: auto;
+        }
+
+        .analytics-panel::-webkit-scrollbar {
+            width: 0;
+        }
+
+        .panel {
+            background: var(--panel-bg);
+            backdrop-filter: blur(15px);
+            border: 1px solid var(--glass-border);
+            border-radius: 18px;
+            padding: 18px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-title {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            color: var(--text-dim);
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.02);
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .stat-value {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .stat-label {
+            font-size: 0.65rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+        }
+
+        /* Feed */
+        .live-feed-panel {
+            flex: 1;
+            min-height: 0;
+        }
+
+        #feed-container {
+            overflow-y: auto;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding-right: 5px;
+        }
+
+        #feed-container::-webkit-scrollbar {
+            width: 3px;
+        }
+
+        #feed-container::-webkit-scrollbar-thumb {
+            background: var(--glass-border);
+        }
+
+        .obs-card {
+            display: flex;
+            gap: 12px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 12px;
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .obs-card:hover {
+            background: rgba(255, 255, 255, 0.06);
+            transform: translateX(5px);
+            border-color: var(--glass-border);
+        }
+
+        .obs-img {
+            width: 55px;
+            height: 55px;
+            border-radius: 8px;
+            object-fit: cover;
+            background: #111;
+        }
+
+        .obs-info {
+            flex: 1;
+            width: 0;
+        }
+
+        .obs-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .obs-meta {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .tag {
+            font-size: 0.6rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            font-weight: 700;
+            margin-top: 5px;
+            display: inline-block;
+        }
+
+        .tag-inat {
+            background: rgba(116, 172, 0, 0.15);
+            color: var(--accent-inat);
+        }
+
+        /* Analytics Items */
+        .analysis-section {
+            margin-bottom: 20px;
+        }
+
+        .analysis-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            margin-bottom: 5px;
+        }
+
+        .progress-bar {
+            height: 4px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--accent-inat);
+            transition: width 1s ease;
+        }
+
+        /* Map Controls */
+        .map-toggles {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            display: flex;
+            gap: 10px;
+            background: var(--panel-bg);
+            padding: 8px 15px;
+            border-radius: 30px;
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(20px);
+        }
+
+        .btn-toggle {
+            background: transparent;
+            border: none;
+            color: var(--text-dim);
+            padding: 8px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.8rem;
+            transition: 0.3s;
+        }
+
+        .btn-toggle.active {
+            background: var(--accent-inat);
+            color: white;
+        }
+
+        /* Layout Switch for Tablets & Laptops */
+        @media (max-width: 1200px) {
+            .sidebar {
+                width: 320px;
+            }
+
+            .analytics-panel {
+                width: 300px;
+            }
+        }
+
+        /* MOBILE OPTIMIZATION */
+        @media (max-width: 900px) {
+            body {
+                overflow: auto;
+                position: relative;
+                height: auto;
+                display: block;
+            }
+
+            main {
+                height: 100vh;
+                flex-direction: column;
+                overflow: visible;
+                display: block;
+            }
+
+            #map {
+                height: 60vh;
+                width: 100%;
+                position: relative;
+            }
+
+            .sidebar,
+            .analytics-panel {
+                position: relative;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                width: 100%;
+                pointer-events: auto;
+                max-height: none;
+                padding: 15px;
+            }
+
+            .sidebar {
+                order: 2;
+            }
+
+            .analytics-panel {
+                order: 3;
+            }
+
+            .map-toggles {
+                bottom: 20px;
+                width: 90%;
+                justify-content: center;
+            }
+
+            .live-feed-panel {
+                max-height: 500px;
+            }
+
+            .panel {
+                border-radius: 0;
+                margin: -15px -15px 15px -15px;
+                border-left: none;
+                border-right: none;
+            }
+        }
+
+        /* Leaflet Popups */
+        .leaflet-popup-content-wrapper {
+            background: var(--panel-bg);
+            color: var(--text-main);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+        }
+
+        .leaflet-popup-tip {
+            background: var(--panel-bg);
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <div class="logo-area">
+            <div class="logo-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-inat)"
+                    stroke-width="2.5">
+                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+                </svg>
+            </div>
+            <div class="logo-text">
+                <span class="logo-main">Ibonarium</span>
+                <span class="logo-sub">lab.live</span>
+            </div>
+        </div>
+
+        <div class="status-badge">
+            <div class="pulse-dot"></div>
+            <span id="clock" style="font-family: 'JetBrains Mono', monospace;">...</span>
+        </div>
+    </header>
+
+    <main>
+        <div id="map"></div>
+
+        <div class="sidebar">
+            <div class="panel">
+                <div class="panel-title">Метрики лабораторії</div>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="total-count">0</div>
+                        <div class="stat-label">Отримано</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="confirmed-count">0</div>
+                        <div class="stat-label">Валідовано</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel live-feed-panel">
+                <div class="panel-title">Живий потік спостережень</div>
+                <div id="feed-container">
+                    <div style="padding: 20px; text-align: center; color: var(--text-dim);">Завантаження вузлів...</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="analytics-panel">
+            <div class="panel">
+                <div class="panel-title">Аналіз таксономії</div>
+
+                <div class="analysis-section">
+                    <div class="section-title" style="font-size:0.65rem; color:var(--text-dim); margin-bottom:10px;">
+                        ДОМІНУЮЧІ ВИДИ</div>
+                    <div id="top-list"></div>
+                </div>
+
+                <div class="analysis-section">
+                    <div class="section-title" style="font-size:0.65rem; color:var(--text-dim); margin-bottom:10px;">
+                        БІОЛОГІЧНІ КЛАСИ</div>
+                    <div id="group-list"></div>
+                </div>
+
+                <div class="analysis-section">
+                    <div class="section-title" style="font-size:0.65rem; color:var(--text-dim); margin-bottom:10px;">
+                        ГЕО-АКТИВНІСТЬ</div>
+                    <div id="geo-status"
+                        style="font-size:0.8rem; background:rgba(255,255,255,0.03); padding:10px; border-radius:10px; border:1px solid var(--glass-border);">
+                        Обчислення...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="map-toggles">
+            <button class="btn-toggle active" id="btn-inat">iNaturalist LIVE</button>
+        </div>
+    </main>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        const state = { map: null, data: [], markers: [] };
+        const TAXA_UA = { 'Aves': 'Птахи', 'Plantae': 'Рослини', 'Insecta': 'Комахи', 'Mammalia': 'Ссавці', 'Fungi': 'Гриби', 'Reptilia': 'Рептилії' };
+
+        function init() {
+            state.map = L.map('map', { zoomControl: false, attributionControl: false }).setView([20, 0], 2.5);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 18 }).addTo(state.map);
+            L.control.zoom({ position: 'bottomright' }).addTo(state.map);
+            load();
+            setInterval(load, 300000);
+        }
+
+        async function load() {
+            document.getElementById('clock').innerText = new Date().toLocaleTimeString('uk-UA');
+            try {
+                const res = await fetch('https://api.inaturalist.org/v1/observations?per_page=50&order=desc&order_by=created_at');
+                const json = await res.json();
+                state.data = json.results.filter(o => o.location).map(o => ({
+                    id: o.id,
+                    name: o.taxon ? (o.taxon.preferred_common_name || o.taxon.name) : 'Невідомий вид',
+                    group: o.taxon ? o.taxon.iconic_taxon_name : 'Other',
+                    lat: parseFloat(o.location.split(',')[0]),
+                    lng: parseFloat(o.location.split(',')[1]),
+                    img: (o.photos && o.photos[0]) ? o.photos[0].url.replace('square', 'medium') : null,
+                    loc: o.place_guess || 'Локація...',
+                    quality: o.quality_grade,
+                    time: new Date(o.created_at)
+                }));
+                render();
+            } catch (e) { console.error(e); }
+        }
+
+        function render() {
+            const feed = document.getElementById('feed-container');
+            state.markers.forEach(m => state.map.removeLayer(m));
+            state.markers = [];
+            feed.innerHTML = '';
+
+            document.getElementById('total-count').innerText = state.data.length;
+            document.getElementById('confirmed-count').innerText = state.data.filter(o => o.quality === 'research').length;
+
+            state.data.forEach(d => {
+                const marker = L.circleMarker([d.lat, d.lng], { radius: 7, fillColor: '#74ac00', color: '#fff', weight: 1.5, fillOpacity: 0.8 }).addTo(state.map);
+                marker.bindPopup(`<div style="font-family:'Outfit'; min-width:140px;">${d.img ? `<img src="${d.img}" style="width:100%; border-radius:8px; margin-bottom:8px;">` : ''}<b>${d.name}</b><br><span style="font-size:0.7rem;">${d.loc}</span></div>`);
+                state.markers.push(marker);
+
+                const card = document.createElement('div');
+                card.className = 'obs-card';
+                card.innerHTML = `<img src="${d.img || 'https://via.placeholder.com/60/111/fff?text=Bio'}" class="obs-img"><div class="obs-info"><div class="obs-name">${d.name}</div><div class="obs-meta">${d.loc}</div><span class="tag tag-inat">Community iNat</span></div>`;
+                card.onclick = () => { state.map.flyTo([d.lat, d.lng], 10); marker.openPopup(); if (window.innerWidth < 900) window.scrollTo({ top: 0, behavior: 'smooth' }); };
+                feed.appendChild(card);
+            });
+
+            analyze();
+        }
+
+        function analyze() {
+            // Top Names
+            const nCounts = {};
+            state.data.forEach(d => nCounts[d.name] = (nCounts[d.name] || 0) + 1);
+            const topNames = Object.entries(nCounts).sort((a, b) => b[1] - a[1]).slice(0, 3);
+            document.getElementById('top-list').innerHTML = topNames.map(([n, c]) => `<div class="analysis-row"><span>${n}</span><span>${c}</span></div><div class="progress-bar"><div class="progress-fill" style="width:${(c / state.data.length) * 100}%"></div></div>`).join('');
+
+            // Groups
+            const gCounts = {};
+            state.data.forEach(d => { const u = TAXA_UA[d.group] || 'Інші'; gCounts[u] = (gCounts[u] || 0) + 1; });
+            const topGroups = Object.entries(gCounts).sort((a, b) => b[1] - a[1]).slice(0, 3);
+            document.getElementById('group-list').innerHTML = topGroups.map(([n, c]) => `<div class="analysis-row"><span>${n}</span><span>${Math.round((c / state.data.length) * 100)}%</span></div><div class="progress-bar"><div class="progress-fill" style="width:${(c / state.data.length) * 100}%; background:var(--accent-blue)"></div></div>`).join('');
+
+            // Geo
+            const n = state.data.filter(d => d.lat > 0).length;
+            const s = state.data.length - n;
+            document.getElementById('geo-status').innerText = n > s ? `Північна півкуля домінує (${Math.round(n / state.data.length * 100)}%)` : `Південна півкуля активніша (${Math.round(s / state.data.length * 100)}%)`;
+        }
+
+        window.onload = init;
+    </script>
+</body>
+
+</html>
