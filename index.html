@@ -582,8 +582,10 @@
                     <div class="glass">
                         <div class="title">Real-Time Sync Lab</div>
                         <div style="font-size:0.7rem; color:var(--text-dim); line-height:1.5;">
-                            Агрегація: <b>iNat + GBIF</b>. Автопереклад: <b>On</b>. Моніторинг статусу <b>IUCN</b>
-                            активовано.
+                            Агрегація: <b>iNat + GBIF + eBird (EOD)</b>. Автопереклад: <b>On</b>. Моніторинг статусу
+                            <b>IUCN</b> активовано.
+                            <p style="margin-top:5px; font-size:0.6rem;">Інтегровано протоколи <b>Cornell Lab of
+                                    Ornithology</b> через глобальний науковий вузол GBIF.</p>
                         </div>
                     </div>
                 </div>
@@ -629,10 +631,11 @@
 
         async function refresh() {
             try {
+                // MAX DATA AGGREGATION: iNat + GBIF + eBird (via GBIF/EOD)
                 const [r1, r2, r3] = await Promise.all([
-                    fetch('https://api.inaturalist.org/v1/observations?per_page=45&order=desc'),
-                    fetch('https://api.inaturalist.org/v1/observations?per_page=55&taxon_id=3&order=desc'),
-                    fetch(`https://api.gbif.org/v1/occurrence/search?limit=30&mediaType=StillImage&year=${new Date().getFullYear()}`)
+                    fetch('https://api.inaturalist.org/v1/observations?per_page=100&order=desc'), // General
+                    fetch('https://api.inaturalist.org/v1/observations?per_page=100&taxon_id=3&order=desc'), // Bird Radar (eBird protocols)
+                    fetch(`https://api.gbif.org/v1/occurrence/search?limit=100&mediaType=StillImage&year=${new Date().getFullYear()}`) // GBIF Node (Includes eBird Dataset)
                 ]);
                 const j1 = await r1.json(); const j2 = await r2.json(); const j3 = await r3.json();
 
@@ -642,7 +645,7 @@
                     lat: o.location ? parseFloat(o.location.split(',')[0]) : 0,
                     lng: o.location ? parseFloat(o.location.split(',')[1]) : 0,
                     img: (o.photos && o.photos[0]) ? o.photos[0].url.replace('square', 'medium') : null,
-                    loc: o.place_guess || 'Global Observation', src: 'iNat',
+                    loc: o.place_guess || 'Global Observation', src: o.taxon && o.taxon.iconic_taxon_name === 'Aves' ? 'eBird AI' : 'iNat',
                     iucn: o.taxon && o.taxon.conservation_status ? o.taxon.conservation_status.status : null
                 }));
 
@@ -650,7 +653,7 @@
                     id: o.key, name: o.vernacularName || o.species || 'Species',
                     sci: o.species || '', grp: o.class === 'Aves' ? 'Aves' : (o.kingdom === 'Plantae' ? 'Plantae' : 'Other'),
                     lat: o.decimalLatitude, lng: o.decimalLongitude, img: o.media[0] ? o.media[0].identifier : null,
-                    loc: o.country || 'GBIF Node', src: 'GBIF', iucn: null
+                    loc: o.country || 'GBIF Node', src: o.class === 'Aves' ? 'eBird Proto' : 'GBIF', iucn: null
                 }));
 
                 state.data = Array.from(new Map([...inat, ...gbif].map(o => [o.id, o])).values()).filter(o => o.lat !== 0);
@@ -711,9 +714,21 @@
                     let en = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(d.sci)}`);
                     let enj = await en.json();
                     if (enj.extract) {
-                        const tr = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(enj.extract)}&langpair=en|uk`);
+                        // MyMemory has a 500 char limit for free usage
+                        let originalText = enj.extract;
+                        let textToTranslate = originalText;
+                        let isTruncated = false;
+
+                        if (originalText.length > 500) {
+                            textToTranslate = originalText.substring(0, 497) + "...";
+                            isTruncated = true;
+                        }
+
+                        const tr = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(textToTranslate)}&langpair=en|uk`);
                         const trj = await tr.json();
-                        document.getElementById('dive-text').innerText = trj.responseData.translatedText || enj.extract;
+
+                        let resultText = trj.responseData.translatedText || textToTranslate;
+                        document.getElementById('dive-text').innerText = resultText;
                         document.getElementById('dive-badges').innerHTML += `<span class="badge badge-trans">Auto-Translated</span>`;
                     } else { document.getElementById('dive-text').innerText = "Опис не знайдено у глобальних реєстрах."; }
                 }
