@@ -5,40 +5,37 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Ibonarium | eco.system.lab.live</title>
-    <meta name="description" content="Реальний моніторинг спостережень за природою. Ibonarium Lab.">
-
     <!-- Google Fonts -->
     <link
-        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&family=JetBrains+Mono:wght@400;700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=JetBrains+Mono:wght@400;700&display=swap"
         rel="stylesheet">
-
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-
     <style>
         :root {
-            --bg-dark: #07090c;
-            --panel-bg: rgba(13, 17, 23, 0.9);
-            --accent-inat: #74ac00;
-            --accent-ebird: #ff9800;
-            --accent-blue: #0ea5e9;
-            --text-main: #f0f6fc;
+            --bg: #050608;
+            --panel: rgba(10, 12, 16, 0.85);
+            --border: rgba(255, 255, 255, 0.08);
+            --c-inat: #74ac00;
+            --c-birds: #ff9800;
+            --c-plants: #22c55e;
+            --c-animals: #0ea5e9;
+            --c-fungi: #a855f7;
+            --text: #f0f6fc;
             --text-dim: #8b949e;
-            --glass-border: rgba(255, 255, 255, 0.08);
-            --header-h: 70px;
         }
 
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Outfit', sans-serif;
+            font-family: 'Inter', sans-serif;
             -webkit-tap-highlight-color: transparent;
         }
 
         body {
-            background-color: var(--bg-dark);
-            color: var(--text-main);
+            background: var(--bg);
+            color: var(--text);
             height: 100vh;
             display: flex;
             flex-direction: column;
@@ -47,37 +44,35 @@
             width: 100%;
         }
 
-        /* Header Responsive */
         header {
-            height: var(--header-h);
+            height: 60px;
             display: flex;
             align-items: center;
             justify-content: space-between;
             padding: 0 20px;
-            background: rgba(7, 9, 12, 0.95);
-            backdrop-filter: blur(20px);
-            border-bottom: 1px solid var(--glass-border);
+            background: rgba(5, 6, 8, 0.95);
+            backdrop-filter: blur(30px);
+            border-bottom: 1px solid var(--border);
             z-index: 2000;
-            flex-shrink: 0;
         }
 
-        .logo-area {
+        .logo {
             display: flex;
             align-items: center;
             gap: 10px;
         }
 
-        .logo-icon {
+        .logo-box {
             width: 32px;
             height: 32px;
-            border: 2px solid var(--accent-inat);
-            border-radius: 8px;
+            border: 1px solid var(--c-inat);
+            border-radius: 6px;
             display: flex;
             align-items: center;
             justify-content: center;
         }
 
-        .logo-text {
+        .logo-txt {
             display: flex;
             flex-direction: column;
         }
@@ -86,50 +81,27 @@
             font-size: 1.1rem;
             font-weight: 600;
             line-height: 1;
+            letter-spacing: -0.5px;
         }
 
         .logo-sub {
             font-size: 0.6rem;
-            color: var(--accent-inat);
+            color: var(--c-inat);
             font-family: 'JetBrains Mono', monospace;
             text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
-        .status-badge {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            background: rgba(255, 255, 255, 0.03);
-            padding: 6px 12px;
-            border-radius: 20px;
+        .time-box {
+            font-family: 'JetBrains Mono', monospace;
             font-size: 0.75rem;
             color: var(--text-dim);
-            border: 1px solid var(--glass-border);
+            background: rgba(255, 255, 255, 0.03);
+            padding: 4px 12px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
         }
 
-        .pulse-dot {
-            width: 8px;
-            height: 8px;
-            background: #22c55e;
-            border-radius: 50%;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0% {
-                box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
-            }
-
-            70% {
-                box-shadow: 0 0 0 10px rgba(34, 197, 94, 0);
-            }
-
-            100% {
-                box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
-            }
-        }
-
-        /* Main Workspace */
         main {
             flex: 1;
             display: flex;
@@ -140,16 +112,16 @@
         #map {
             flex: 1;
             z-index: 1;
-            height: 100%;
+            background: #000;
         }
 
-        /* Sidebar Panels */
-        .sidebar {
+        /* Left Side */
+        .side-left {
             position: absolute;
             top: 15px;
             left: 15px;
             bottom: 15px;
-            width: 380px;
+            width: 360px;
             z-index: 1000;
             display: flex;
             flex-direction: column;
@@ -157,17 +129,13 @@
             pointer-events: none;
         }
 
-        .sidebar>* {
-            pointer-events: auto;
-        }
-
-        /* Right Analytics Panel */
-        .analytics-panel {
+        /* Right Side */
+        .side-right {
             position: absolute;
             top: 15px;
             right: 15px;
             bottom: 15px;
-            width: 340px;
+            width: 320px;
             z-index: 1000;
             display: flex;
             flex-direction: column;
@@ -176,446 +144,436 @@
             overflow-y: auto;
         }
 
-        .analytics-panel>* {
+        .side-left>*,
+        .side-right>* {
             pointer-events: auto;
         }
 
-        .analytics-panel::-webkit-scrollbar {
-            width: 0;
+        .glass {
+            background: var(--panel);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 16px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
         }
 
-        .panel {
-            background: var(--panel-bg);
-            backdrop-filter: blur(15px);
-            border: 1px solid var(--glass-border);
-            border-radius: 18px;
-            padding: 18px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-            display: flex;
-            flex-direction: column;
-        }
-
-        .panel-title {
-            font-size: 0.75rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 1.2px;
-            color: var(--text-dim);
-            margin-bottom: 15px;
-            display: flex;
-            justify-content: space-between;
-        }
-
-        /* Stats Grid */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
-
-        .stat-card {
-            background: rgba(255, 255, 255, 0.02);
-            padding: 12px;
-            border-radius: 12px;
-            border: 1px solid var(--glass-border);
-        }
-
-        .stat-value {
-            font-size: 1.4rem;
-            font-weight: 600;
-            color: var(--text-main);
-        }
-
-        .stat-label {
+        .title {
             font-size: 0.65rem;
-            color: var(--text-dim);
+            font-weight: 700;
             text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-dim);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
-        /* Feed */
-        .live-feed-panel {
+        .title::after {
+            content: '';
             flex: 1;
-            min-height: 0;
+            height: 1px;
+            background: var(--border);
         }
 
-        #feed-container {
+        #feed {
+            flex: 1;
             overflow-y: auto;
-            flex: 1;
             display: flex;
             flex-direction: column;
             gap: 10px;
             padding-right: 5px;
         }
 
-        #feed-container::-webkit-scrollbar {
-            width: 3px;
+        #feed::-webkit-scrollbar {
+            width: 2px;
         }
 
-        #feed-container::-webkit-scrollbar-thumb {
-            background: var(--glass-border);
+        #feed::-webkit-scrollbar-thumb {
+            background: var(--border);
         }
 
-        .obs-card {
+        .card {
             display: flex;
-            gap: 12px;
+            gap: 10px;
             padding: 10px;
             background: rgba(255, 255, 255, 0.02);
             border-radius: 12px;
             border: 1px solid transparent;
             cursor: pointer;
-            transition: 0.3s;
+            transition: 0.2s;
         }
 
-        .obs-card:hover {
-            background: rgba(255, 255, 255, 0.06);
-            transform: translateX(5px);
-            border-color: var(--glass-border);
+        .card:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.1);
         }
 
-        .obs-img {
-            width: 55px;
-            height: 55px;
+        .card-img {
+            width: 50px;
+            height: 50px;
             border-radius: 8px;
             object-fit: cover;
             background: #111;
         }
 
-        .obs-info {
+        .card-info {
             flex: 1;
             width: 0;
         }
 
-        .obs-name {
+        .card-name {
+            font-size: 0.85rem;
             font-weight: 600;
-            font-size: 0.9rem;
+            color: var(--text);
+            white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            white-space: nowrap;
         }
 
-        .obs-meta {
+        .card-meta {
             font-size: 0.75rem;
             color: var(--text-dim);
+            white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            white-space: nowrap;
         }
 
-        .tag {
-            font-size: 0.6rem;
-            padding: 2px 6px;
-            border-radius: 4px;
-            text-transform: uppercase;
-            font-weight: 700;
-            margin-top: 5px;
+        .tag-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
             display: inline-block;
+            margin-right: 4px;
         }
 
-        .tag-inat {
-            background: rgba(116, 172, 0, 0.15);
-            color: var(--accent-inat);
-        }
-
-        /* Analytics Items */
-        .analysis-section {
-            margin-bottom: 20px;
-        }
-
-        .analysis-row {
+        /* Analytics Minimal */
+        .a-row {
             display: flex;
             justify-content: space-between;
             font-size: 0.8rem;
-            margin-bottom: 5px;
+            margin-bottom: 4px;
         }
 
-        .progress-bar {
-            height: 4px;
-            background: rgba(255, 255, 255, 0.03);
+        .a-bar {
+            height: 3px;
+            background: rgba(255, 255, 255, 0.04);
             border-radius: 2px;
             overflow: hidden;
             margin-bottom: 12px;
         }
 
-        .progress-fill {
+        .a-fill {
             height: 100%;
-            background: var(--accent-inat);
-            transition: width 1s ease;
+            transition: 1s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        /* Map Controls */
-        .map-toggles {
+        /* Minimal Controls */
+        .controls {
             position: absolute;
-            bottom: 30px;
+            bottom: 25px;
             left: 50%;
             transform: translateX(-50%);
-            z-index: 1000;
+            z-index: 2000;
             display: flex;
-            gap: 10px;
-            background: var(--panel-bg);
-            padding: 8px 15px;
-            border-radius: 30px;
-            border: 1px solid var(--glass-border);
+            gap: 6px;
+            background: rgba(10, 12, 16, 0.9);
+            border: 1px solid var(--border);
+            padding: 5px;
+            border-radius: 12px;
             backdrop-filter: blur(20px);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
         }
 
-        .btn-toggle {
+        .btn {
             background: transparent;
             border: none;
             color: var(--text-dim);
-            padding: 8px 12px;
-            border-radius: 20px;
+            padding: 6px 14px;
+            border-radius: 8px;
             cursor: pointer;
+            font-size: 0.75rem;
             font-weight: 600;
-            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
             transition: 0.3s;
         }
 
-        .btn-toggle.active {
-            background: var(--accent-inat);
-            color: white;
+        .btn:hover {
+            color: var(--text);
+            background: rgba(255, 255, 255, 0.03);
         }
 
-        /* Layout Switch for Tablets & Laptops */
-        @media (max-width: 1200px) {
-            .sidebar {
-                width: 320px;
-            }
-
-            .analytics-panel {
-                width: 300px;
-            }
+        .btn.active {
+            color: #fff;
         }
 
-        /* MOBILE OPTIMIZATION */
+        .btn.active[data-type="all"] {
+            background: var(--c-inat);
+        }
+
+        .btn.active[data-type="birds"] {
+            background: var(--c-birds);
+        }
+
+        .btn.active[data-type="plants"] {
+            background: var(--c-plants);
+        }
+
+        .btn.active[data-type="animals"] {
+            background: var(--c-animals);
+        }
+
+        .btn.active[data-type="fungi"] {
+            background: var(--c-fungi);
+        }
+
+        /* Mobile Layout */
         @media (max-width: 900px) {
             body {
-                overflow: auto;
                 position: relative;
+                overflow: auto;
                 height: auto;
-                display: block;
             }
 
             main {
-                height: 100vh;
-                flex-direction: column;
-                overflow: visible;
                 display: block;
+                height: auto;
             }
 
             #map {
-                height: 60vh;
+                height: 50vh;
                 width: 100%;
                 position: relative;
             }
 
-            .sidebar,
-            .analytics-panel {
+            .side-left,
+            .side-right {
                 position: relative;
+                width: 100%;
                 top: 0;
                 left: 0;
                 right: 0;
-                bottom: 0;
-                width: 100%;
-                pointer-events: auto;
-                max-height: none;
                 padding: 15px;
+                pointer-events: auto;
             }
 
-            .sidebar {
-                order: 2;
+            .side-right {
+                overflow-y: visible;
             }
 
-            .analytics-panel {
-                order: 3;
+            .controls {
+                position: fixed;
+                bottom: 15px;
+                width: 92%;
+                overflow-x: auto;
             }
 
-            .map-toggles {
-                bottom: 20px;
-                width: 90%;
+            .btn {
+                flex: 1;
                 justify-content: center;
+                font-size: 0.7rem;
+                padding: 8px 10px;
             }
 
-            .live-feed-panel {
-                max-height: 500px;
-            }
-
-            .panel {
+            .glass {
                 border-radius: 0;
                 margin: -15px -15px 15px -15px;
                 border-left: none;
                 border-right: none;
             }
+
+            header {
+                padding: 0 15px;
+                height: 50px;
+            }
         }
 
-        /* Leaflet Popups */
         .leaflet-popup-content-wrapper {
-            background: var(--panel-bg);
-            color: var(--text-main);
-            border: 1px solid var(--glass-border);
+            background: var(--panel);
+            color: var(--text);
+            border: 1px solid var(--border);
             border-radius: 12px;
         }
 
         .leaflet-popup-tip {
-            background: var(--panel-bg);
+            background: var(--panel);
         }
     </style>
 </head>
 
 <body>
-
     <header>
-        <div class="logo-area">
-            <div class="logo-icon">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-inat)"
-                    stroke-width="2.5">
-                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+        <div class="logo">
+            <div class="logo-box">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path
+                        d="M16 7C16 7 14.5 4 12 4C9.5 4 8 7 8 7M3 13C3 13 4.5 9 12 9C19.5 9 21 13 21 13M3 17C3 17 4.5 14 12 14C19.5 14 21 17 21 17" />
+                    <path d="M12 9V20" />
+                    <path d="M9 18L12 21L15 18" />
+                    <circle cx="12" cy="7" r="1" fill="white" />
                 </svg>
             </div>
-            <div class="logo-text">
+            <div class="logo-txt">
                 <span class="logo-main">Ibonarium</span>
                 <span class="logo-sub">lab.live</span>
             </div>
         </div>
-
-        <div class="status-badge">
-            <div class="pulse-dot"></div>
-            <span id="clock" style="font-family: 'JetBrains Mono', monospace;">...</span>
-        </div>
+        <div class="time-box" id="time">00:00:00</div>
     </header>
 
     <main>
         <div id="map"></div>
-
-        <div class="sidebar">
-            <div class="panel">
-                <div class="panel-title">Метрики лабораторії</div>
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-value" id="total-count">0</div>
-                        <div class="stat-label">Отримано</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value" id="confirmed-count">0</div>
-                        <div class="stat-label">Валідовано</div>
-                    </div>
-                </div>
+        <div class="side-left">
+            <div class="glass" style="text-align:center;">
+                <div class="title">Активні знахідки</div>
+                <div id="c-total" style="font-size:1.8rem; font-weight:600;">0</div>
             </div>
-
-            <div class="panel live-feed-panel">
-                <div class="panel-title">Живий потік спостережень</div>
-                <div id="feed-container">
-                    <div style="padding: 20px; text-align: center; color: var(--text-dim);">Завантаження вузлів...</div>
-                </div>
+            <div class="glass" style="flex:1; display:flex; flex-direction:column; min-height:0;">
+                <div class="title">Живий потік</div>
+                <div id="feed"></div>
             </div>
         </div>
+        <div class="side-right">
+            <div class="glass" id="analytics-box">
+                <div class="title">Домінуючі види</div>
+                <div id="stat-sp"></div>
 
-        <div class="analytics-panel">
-            <div class="panel">
-                <div class="panel-title">Аналіз таксономії</div>
+                <div class="title" style="margin-top:20px;">Розподіл за класами</div>
+                <div id="stat-gr"></div>
 
-                <div class="analysis-section">
-                    <div class="section-title" style="font-size:0.65rem; color:var(--text-dim); margin-bottom:10px;">
-                        ДОМІНУЮЧІ ВИДИ</div>
-                    <div id="top-list"></div>
-                </div>
-
-                <div class="analysis-section">
-                    <div class="section-title" style="font-size:0.65rem; color:var(--text-dim); margin-bottom:10px;">
-                        БІОЛОГІЧНІ КЛАСИ</div>
-                    <div id="group-list"></div>
-                </div>
-
-                <div class="analysis-section">
-                    <div class="section-title" style="font-size:0.65rem; color:var(--text-dim); margin-bottom:10px;">
-                        ГЕО-АКТИВНІСТЬ</div>
-                    <div id="geo-status"
-                        style="font-size:0.8rem; background:rgba(255,255,255,0.03); padding:10px; border-radius:10px; border:1px solid var(--glass-border);">
-                        Обчислення...
+                <div class="title" style="margin-top:20px;">Географічний пульс</div>
+                <div id="stat-geo"
+                    style="background:rgba(255,255,255,0.02); padding:10px; border-radius:10px; border:1px solid var(--border);">
+                    <div class="a-row" id="geo-labels"><span>Північ: 0%</span><span>Південь: 0%</span></div>
+                    <div
+                        style="height:3px; background:rgba(255,255,255,0.04); display:flex; border-radius:1px; overflow:hidden;">
+                        <div id="geo-n" style="height:100%; background:var(--c-inat);"></div>
+                        <div id="geo-s" style="height:100%; background:var(--c-animals);"></div>
                     </div>
                 </div>
             </div>
         </div>
-
-        <div class="map-toggles">
-            <button class="btn-toggle active" id="btn-inat">iNaturalist LIVE</button>
+        <div class="controls">
+            <button class="btn active" data-type="all">Усі</button>
+            <button class="btn active" data-type="birds">Птахи</button>
+            <button class="btn active" data-type="plants">Рослини</button>
+            <button class="btn active" data-type="animals">Тварини</button>
+            <button class="btn active" data-type="fungi">Гриби</button>
         </div>
     </main>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        const state = { map: null, data: [], markers: [] };
-        const TAXA_UA = { 'Aves': 'Птахи', 'Plantae': 'Рослини', 'Insecta': 'Комахи', 'Mammalia': 'Ссавці', 'Fungi': 'Гриби', 'Reptilia': 'Рептилії' };
+        const state = { map: null, data: [], markers: [], filters: { birds: true, plants: true, animals: true, fungi: true, all: true } };
+        const TAXA = { 'Aves': 'Птахи', 'Plantae': 'Рослини', 'Insecta': 'Комахи', 'Mammalia': 'Ссавці', 'Fungi': 'Гриби', 'Reptilia': 'Рептилії', 'Amphibia': 'Земноводні' };
+        const ANIMALS = ['Mammalia', 'Reptilia', 'Amphibia', 'Insecta'];
+        const COLORS = { Aves: 'var(--c-birds)', Plantae: 'var(--c-plants)', Fungi: 'var(--c-fungi)', Animal: 'var(--c-animals)', Other: 'var(--c-inat)' };
 
         function init() {
-            state.map = L.map('map', { zoomControl: false, attributionControl: false }).setView([20, 0], 2.5);
+            state.map = L.map('map', { zoomControl: false, attributionControl: false }).setView([20, 10], 2.2);
             L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 18 }).addTo(state.map);
             L.control.zoom({ position: 'bottomright' }).addTo(state.map);
-            load();
-            setInterval(load, 300000);
+            refresh(); setInterval(refresh, 300000);
         }
 
-        async function load() {
-            document.getElementById('clock').innerText = new Date().toLocaleTimeString('uk-UA');
+        async function refresh() {
+            document.getElementById('time').innerText = new Date().toLocaleTimeString('uk-UA');
             try {
-                const res = await fetch('https://api.inaturalist.org/v1/observations?per_page=50&order=desc&order_by=created_at');
-                const json = await res.json();
-                state.data = json.results.filter(o => o.location).map(o => ({
-                    id: o.id,
-                    name: o.taxon ? (o.taxon.preferred_common_name || o.taxon.name) : 'Невідомий вид',
-                    group: o.taxon ? o.taxon.iconic_taxon_name : 'Other',
-                    lat: parseFloat(o.location.split(',')[0]),
-                    lng: parseFloat(o.location.split(',')[1]),
-                    img: (o.photos && o.photos[0]) ? o.photos[0].url.replace('square', 'medium') : null,
-                    loc: o.place_guess || 'Локація...',
-                    quality: o.quality_grade,
-                    time: new Date(o.created_at)
+                const r = await fetch('https://api.inaturalist.org/v1/observations?per_page=70&order=desc&order_by=created_at');
+                const j = await r.json();
+                state.data = j.results.filter(o => o.location).map(o => ({
+                    id: o.id, name: o.taxon ? (o.taxon.preferred_common_name || o.taxon.name) : 'Unknown',
+                    grp: o.taxon ? o.taxon.iconic_taxon_name : 'Other',
+                    lat: parseFloat(o.location.split(',')[0]), lng: parseFloat(o.location.split(',')[1]),
+                    img: o.photos[0] ? o.photos[0].url.replace('square', 'medium') : null,
+                    loc: o.place_guess || '...'
                 }));
-                render();
+                draw();
             } catch (e) { console.error(e); }
         }
 
-        function render() {
-            const feed = document.getElementById('feed-container');
+        function draw() {
+            const feed = document.getElementById('feed');
             state.markers.forEach(m => state.map.removeLayer(m));
-            state.markers = [];
-            feed.innerHTML = '';
+            state.markers = []; feed.innerHTML = '';
 
-            document.getElementById('total-count').innerText = state.data.length;
-            document.getElementById('confirmed-count').innerText = state.data.filter(o => o.quality === 'research').length;
-
-            state.data.forEach(d => {
-                const marker = L.circleMarker([d.lat, d.lng], { radius: 7, fillColor: '#74ac00', color: '#fff', weight: 1.5, fillOpacity: 0.8 }).addTo(state.map);
-                marker.bindPopup(`<div style="font-family:'Outfit'; min-width:140px;">${d.img ? `<img src="${d.img}" style="width:100%; border-radius:8px; margin-bottom:8px;">` : ''}<b>${d.name}</b><br><span style="font-size:0.7rem;">${d.loc}</span></div>`);
-                state.markers.push(marker);
-
-                const card = document.createElement('div');
-                card.className = 'obs-card';
-                card.innerHTML = `<img src="${d.img || 'https://via.placeholder.com/60/111/fff?text=Bio'}" class="obs-img"><div class="obs-info"><div class="obs-name">${d.name}</div><div class="obs-meta">${d.loc}</div><span class="tag tag-inat">Community iNat</span></div>`;
-                card.onclick = () => { state.map.flyTo([d.lat, d.lng], 10); marker.openPopup(); if (window.innerWidth < 900) window.scrollTo({ top: 0, behavior: 'smooth' }); };
-                feed.appendChild(card);
+            const filtered = state.data.filter(d => {
+                if (!state.filters.birds && d.grp === 'Aves') return false;
+                if (!state.filters.plants && d.grp === 'Plantae') return false;
+                if (!state.filters.fungi && d.grp === 'Fungi') return false;
+                if (!state.filters.animals && ANIMALS.includes(d.grp)) return false;
+                return true;
             });
 
-            analyze();
+            document.getElementById('c-total').innerText = filtered.length;
+
+            filtered.forEach(d => {
+                let c = COLORS.Other;
+                if (d.grp === 'Aves') c = COLORS.Aves;
+                else if (d.grp === 'Plantae') c = COLORS.Plantae;
+                else if (d.grp === 'Fungi') c = COLORS.Fungi;
+                else if (ANIMALS.includes(d.grp)) c = COLORS.Animal;
+
+                const m = L.circleMarker([d.lat, d.lng], { radius: 7, fillColor: c, color: '#fff', weight: 1, fillOpacity: 0.8 }).addTo(state.map);
+                m.bindPopup(`<div style="min-width:140px;">${d.img ? `<img src="${d.img}" style="width:100%; border-radius:8px; margin-bottom:8px;">` : ''}<b>${d.name}</b><br><small>${d.loc}</small></div>`);
+                state.markers.push(m);
+
+                const div = document.createElement('div');
+                div.className = 'card';
+                div.innerHTML = `<img src="${d.img || 'https://via.placeholder.com/50/111/fff?text=Bio'}" class="card-img"><div class="card-info"><div class="card-name">${d.name}</div><div class="card-meta"><span class="tag-dot" style="background:${c}"></span>${d.loc}</div></div>`;
+                div.onclick = () => { state.map.flyTo([d.lat, d.lng], 11); m.openPopup(); if (window.innerWidth < 900) window.scrollTo({ top: 0, behavior: 'smooth' }); };
+                feed.appendChild(div);
+            });
+            stats(filtered);
         }
 
-        function analyze() {
-            // Top Names
-            const nCounts = {};
-            state.data.forEach(d => nCounts[d.name] = (nCounts[d.name] || 0) + 1);
-            const topNames = Object.entries(nCounts).sort((a, b) => b[1] - a[1]).slice(0, 3);
-            document.getElementById('top-list').innerHTML = topNames.map(([n, c]) => `<div class="analysis-row"><span>${n}</span><span>${c}</span></div><div class="progress-bar"><div class="progress-fill" style="width:${(c / state.data.length) * 100}%"></div></div>`).join('');
+        function stats(data) {
+            if (data.length === 0) return;
+            // 1. Dominant Species
+            const nC = {}; data.forEach(d => nC[d.name] = (nC[d.name] || 0) + 1);
+            const topS = Object.entries(nC).sort((a, b) => b[1] - a[1]).slice(0, 3);
+            document.getElementById('stat-sp').innerHTML = topS.map(([n, c]) => `<div class="a-row"><span>${n}</span><span>${c}</span></div><div class="a-bar"><div class="a-fill" style="width:${c / data.length * 100}%; background:var(--c-inat)"></div></div>`).join('');
 
-            // Groups
-            const gCounts = {};
-            state.data.forEach(d => { const u = TAXA_UA[d.group] || 'Інші'; gCounts[u] = (gCounts[u] || 0) + 1; });
-            const topGroups = Object.entries(gCounts).sort((a, b) => b[1] - a[1]).slice(0, 3);
-            document.getElementById('group-list').innerHTML = topGroups.map(([n, c]) => `<div class="analysis-row"><span>${n}</span><span>${Math.round((c / state.data.length) * 100)}%</span></div><div class="progress-bar"><div class="progress-fill" style="width:${(c / state.data.length) * 100}%; background:var(--accent-blue)"></div></div>`).join('');
+            // 2. Class Distribution
+            const gC = {}; data.forEach(d => { const u = TAXA[d.grp] || 'Інші'; gC[u] = (gC[u] || 0) + 1; });
+            const topG = Object.entries(gC).sort((a, b) => b[1] - a[1]).slice(0, 4);
+            document.getElementById('stat-gr').innerHTML = topG.map(([n, c]) => {
+                let cl = 'var(--text-dim)';
+                if (n === 'Птахи') cl = COLORS.Aves; else if (n === 'Рослини') cl = COLORS.Plantae; else if (n === 'Гриби') cl = COLORS.Fungi; else if (['Ссавці', 'Рептилії', 'Комахи', 'Земноводні'].includes(n)) cl = COLORS.Animal;
+                return `<div class="a-row"><span>${n}</span><span>${Math.round(c / data.length * 100)}%</span></div><div class="a-bar"><div class="a-fill" style="width:${c / data.length * 100}%; background:${cl}"></div></div>`;
+            }).join('');
 
-            // Geo
-            const n = state.data.filter(d => d.lat > 0).length;
-            const s = state.data.length - n;
-            document.getElementById('geo-status').innerText = n > s ? `Північна півкуля домінує (${Math.round(n / state.data.length * 100)}%)` : `Південна півкуля активніша (${Math.round(s / state.data.length * 100)}%)`;
+            // 4. Geo Hemisphere
+            const north = data.filter(d => d.lat > 0).length;
+            const south = data.length - north;
+            const nPct = Math.round(north / data.length * 100);
+            const sPct = 100 - nPct;
+            document.getElementById('geo-labels').innerHTML = `<span>Північ: ${nPct}%</span><span>Південь: ${sPct}%</span>`;
+            document.getElementById('geo-n').style.width = nPct + '%';
+            document.getElementById('geo-s').style.width = sPct + '%';
         }
+
+        document.querySelectorAll('.btn').forEach(b => {
+            b.onclick = () => {
+                const t = b.dataset.type;
+                if (t === 'all') {
+                    state.filters.all = !state.filters.all;
+                    state.filters.birds = state.filters.plants = state.filters.animals = state.filters.fungi = state.filters.all;
+                    document.querySelectorAll('.btn').forEach(btn => btn.classList.toggle('active', state.filters.all));
+                } else {
+                    state.filters[t] = !state.filters[t];
+                    b.classList.toggle('active');
+                    const allActive = state.filters.birds && state.filters.plants && state.filters.animals && state.filters.fungi;
+                    document.querySelector('[data-type="all"]').classList.toggle('active', allActive);
+                    state.filters.all = allActive;
+                }
+                draw();
+            };
+        });
 
         window.onload = init;
     </script>
