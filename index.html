@@ -330,6 +330,19 @@
             background: var(--c-fungi);
         }
 
+        /* Algorithm Info */
+        .info-txt {
+            font-size: 0.72rem;
+            color: var(--text-dim);
+            line-height: 1.5;
+            margin-top: 10px;
+        }
+
+        .info-highlight {
+            color: var(--c-inat);
+            font-weight: 600;
+        }
+
         /* Mobile Layout */
         @media (max-width: 900px) {
             body {
@@ -454,6 +467,24 @@
                         <div id="geo-n" style="height:100%; background:var(--c-inat);"></div>
                         <div id="geo-s" style="height:100%; background:var(--c-animals);"></div>
                     </div>
+                </div>
+            </div>
+
+            <div class="glass">
+                <div class="title">Алгоритм та Механізм</div>
+                <div class="info-txt">
+                    Система <span class="info-highlight">Ibonarium Lab</span> працює за принципом агрегації даних у
+                    реальному часі.
+                    Кожні 5 хвилин алгоритм звертається до глобальної мережі спостережень <span
+                        class="info-highlight">iNaturalist API</span>,
+                    фільтруючи останні світові знахідки за координатами та фотопідтвердженням.
+                    <br><br>
+                    Механізм класифікації автоматично сортує дані на <span style="color:var(--c-birds)">Птахів</span>,
+                    <span style="color:var(--c-plants)">Рослин</span>, <span
+                        style="color:var(--c-animals)">Тварин</span>
+                    та <span style="color:var(--c-fungi)">Грибів</span>, розраховуючи географічну активність півкуль та
+                    домінуючі види
+                    для миттєвого відображення екологічного стану планети.
                 </div>
             </div>
         </div>
