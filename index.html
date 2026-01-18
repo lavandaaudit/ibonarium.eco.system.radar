@@ -4,25 +4,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ibonarium | eco.system.radar.lab.live</title>
+    <title>Ibonarium Pro | Real-Time Biodiversity Radar</title>
+    <!-- SEO -->
+    <meta name="description"
+        content="Глобальна наукова лабораторія моніторингу біорізноманіття в реальному часі. Агрегація даних iNaturalist, GBIF та Bird Radar.">
     <!-- Google Fonts -->
     <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=JetBrains+Mono:wght@400;700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap"
         rel="stylesheet">
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         :root {
             --bg: #050608;
-            --panel: rgba(10, 12, 16, 0.85);
-            --border: rgba(255, 255, 255, 0.08);
+            --panel: rgba(10, 12, 16, 0.95);
+            --border: rgba(255, 255, 255, 0.1);
             --c-inat: #74ac00;
             --c-birds: #ff9800;
             --c-plants: #22c55e;
             --c-animals: #0ea5e9;
             --c-fungi: #a855f7;
+            --c-red: #ef4444;
             --text: #f0f6fc;
             --text-dim: #8b949e;
+            --accent: #58a6ff;
+            --glass: blur(40px);
         }
 
         * {
@@ -40,7 +46,6 @@
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            position: fixed;
             width: 100%;
         }
 
@@ -50,16 +55,17 @@
             align-items: center;
             justify-content: space-between;
             padding: 0 20px;
-            background: rgba(5, 6, 8, 0.95);
-            backdrop-filter: blur(30px);
+            background: rgba(5, 6, 8, 0.98);
+            backdrop-filter: var(--glass);
             border-bottom: 1px solid var(--border);
             z-index: 2000;
+            flex-shrink: 0;
         }
 
         .logo {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
         }
 
         .logo-box {
@@ -70,17 +76,12 @@
             display: flex;
             align-items: center;
             justify-content: center;
-        }
-
-        .logo-txt {
-            display: flex;
-            flex-direction: column;
+            background: rgba(116, 172, 0, 0.1);
         }
 
         .logo-main {
             font-size: 1.1rem;
-            font-weight: 600;
-            line-height: 1;
+            font-weight: 700;
             letter-spacing: -0.5px;
         }
 
@@ -115,52 +116,46 @@
             background: #000;
         }
 
-        /* Left Side */
-        .side-left {
+        /* Responsive UI Containers */
+        .ui-layer {
             position: absolute;
-            top: 15px;
-            left: 15px;
-            bottom: 15px;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1000;
+            display: flex;
+            padding: 15px;
+            gap: 15px;
+        }
+
+        .col-left,
+        .col-right {
             width: 360px;
-            z-index: 1000;
             display: flex;
             flex-direction: column;
             gap: 15px;
             pointer-events: none;
         }
 
-        /* Right Side */
-        .side-right {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            bottom: 15px;
-            width: 320px;
-            z-index: 1000;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            pointer-events: none;
-            overflow-y: auto;
-        }
-
-        .side-left>*,
-        .side-right>* {
+        .col-left>*,
+        .col-right>* {
             pointer-events: auto;
         }
 
         .glass {
             background: var(--panel);
-            backdrop-filter: blur(20px);
+            backdrop-filter: var(--glass);
             border: 1px solid var(--border);
             border-radius: 16px;
             padding: 16px;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
         }
 
         .title {
             font-size: 0.65rem;
-            font-weight: 700;
+            font-weight: 800;
             text-transform: uppercase;
             letter-spacing: 1.5px;
             color: var(--text-dim);
@@ -177,13 +172,13 @@
             background: var(--border);
         }
 
+        /* Live Feed */
         #feed {
             flex: 1;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
             gap: 10px;
-            padding-right: 5px;
         }
 
         #feed::-webkit-scrollbar {
@@ -206,8 +201,8 @@
         }
 
         .card:hover {
+            border-color: var(--accent);
             background: rgba(255, 255, 255, 0.05);
-            border-color: rgba(255, 255, 255, 0.1);
         }
 
         .card-img {
@@ -215,53 +210,71 @@
             height: 50px;
             border-radius: 8px;
             object-fit: cover;
-            background: #111;
+            border: 1px solid var(--border);
         }
 
         .card-info {
             flex: 1;
-            width: 0;
+            min-width: 0;
         }
 
         .card-name {
             font-size: 0.85rem;
-            font-weight: 600;
-            color: var(--text);
+            font-weight: 700;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
 
         .card-meta {
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             color: var(--text-dim);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            display: flex;
+            align-items: center;
+            gap: 5px;
         }
 
-        .tag-dot {
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            display: inline-block;
-            margin-right: 4px;
+        /* Stats */
+        .stat-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
         }
 
-        /* Analytics Minimal */
+        .stat-box {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 10px;
+            border-radius: 10px;
+            text-align: center;
+            border: 1px solid var(--border);
+        }
+
+        .stat-val {
+            font-size: 1.2rem;
+            font-weight: 700;
+            display: block;
+        }
+
+        .stat-lab {
+            font-size: 0.55rem;
+            text-transform: uppercase;
+            color: var(--text-dim);
+        }
+
         .a-row {
             display: flex;
             justify-content: space-between;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             margin-bottom: 4px;
         }
 
         .a-bar {
             height: 3px;
-            background: rgba(255, 255, 255, 0.04);
+            background: rgba(255, 255, 255, 0.05);
             border-radius: 2px;
+            margin-bottom: 10px;
             overflow: hidden;
-            margin-bottom: 12px;
         }
 
         .a-fill {
@@ -269,7 +282,7 @@
             transition: 1s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        /* Minimal Controls */
+        /* Controls */
         .controls {
             position: absolute;
             bottom: 25px;
@@ -278,12 +291,12 @@
             z-index: 2000;
             display: flex;
             gap: 6px;
-            background: rgba(10, 12, 16, 0.9);
+            background: var(--panel);
             border: 1px solid var(--border);
-            padding: 5px;
-            border-radius: 12px;
-            backdrop-filter: blur(20px);
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+            padding: 6px;
+            border-radius: 14px;
+            backdrop-filter: var(--glass);
+            pointer-events: auto;
         }
 
         .btn {
@@ -291,19 +304,11 @@
             border: none;
             color: var(--text-dim);
             padding: 6px 14px;
-            border-radius: 8px;
+            border-radius: 10px;
             cursor: pointer;
-            font-size: 0.75rem;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 6px;
+            font-size: 0.7rem;
+            font-weight: 700;
             transition: 0.3s;
-        }
-
-        .btn:hover {
-            color: var(--text);
-            background: rgba(255, 255, 255, 0.03);
         }
 
         .btn.active {
@@ -330,30 +335,108 @@
             background: var(--c-fungi);
         }
 
-        /* Algorithm Info */
-        .info-txt {
-            font-size: 0.72rem;
+        /* Side Panel (Deep Dive) */
+        #deep-dive {
+            position: fixed;
+            top: 0;
+            right: -100%;
+            width: 380px;
+            height: 100%;
+            background: var(--panel);
+            backdrop-filter: var(--glass);
+            border-left: 1px solid var(--border);
+            z-index: 3000;
+            transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: -20px 0 50px rgba(0, 0, 0, 0.8);
+        }
+
+        #deep-dive.active {
+            right: 0;
+        }
+
+        .close-dive {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            cursor: pointer;
             color: var(--text-dim);
-            line-height: 1.5;
-            margin-top: 10px;
         }
 
-        .info-highlight {
-            color: var(--c-inat);
-            font-weight: 600;
+        .dive-img {
+            width: 100%;
+            height: 220px;
+            border-radius: 12px;
+            object-fit: cover;
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
         }
 
-        /* Mobile Layout */
+        .dive-name {
+            font-size: 1.3rem;
+            font-weight: 800;
+            margin-bottom: 5px;
+        }
+
+        .dive-sci {
+            font-size: 0.85rem;
+            font-style: italic;
+            color: var(--text-dim);
+            margin-bottom: 20px;
+        }
+
+        .dive-text {
+            font-size: 0.85rem;
+            line-height: 1.6;
+            color: var(--text-dim);
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .badge {
+            font-size: 0.6rem;
+            font-weight: 800;
+            padding: 2px 8px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            margin-right: 5px;
+        }
+
+        .badge-red {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--c-red);
+        }
+
+        .badge-trans {
+            background: rgba(88, 166, 255, 0.2);
+            color: var(--accent);
+        }
+
+        /* Mobile Adaptivity */
+        @media (max-width: 1024px) {
+
+            .col-left,
+            .col-right {
+                width: 300px;
+            }
+        }
+
         @media (max-width: 900px) {
             body {
-                position: relative;
-                overflow: auto;
+                overflow-y: auto;
                 height: auto;
+                position: relative;
+            }
+
+            header {
+                position: sticky;
+                top: 0;
             }
 
             main {
                 display: block;
-                height: auto;
             }
 
             #map {
@@ -362,19 +445,16 @@
                 position: relative;
             }
 
-            .side-left,
-            .side-right {
+            .ui-layer {
                 position: relative;
-                width: 100%;
-                top: 0;
-                left: 0;
-                right: 0;
+                flex-direction: column;
+                height: auto;
                 padding: 15px;
-                pointer-events: auto;
             }
 
-            .side-right {
-                overflow-y: visible;
+            .col-left,
+            .col-right {
+                width: 100%;
             }
 
             .controls {
@@ -382,37 +462,33 @@
                 bottom: 15px;
                 width: 92%;
                 overflow-x: auto;
+                justify-content: flex-start;
             }
 
-            .btn {
-                flex: 1;
-                justify-content: center;
-                font-size: 0.7rem;
-                padding: 8px 10px;
-            }
-
-            .glass {
-                border-radius: 0;
-                margin: -15px -15px 15px -15px;
+            #deep-dive {
+                width: 100%;
+                height: 80vh;
+                top: auto;
+                bottom: -100%;
                 border-left: none;
-                border-right: none;
+                border-top: 1px solid var(--border);
+                border-radius: 25px 25px 0 0;
             }
 
-            header {
-                padding: 0 15px;
-                height: 50px;
+            #deep-dive.active {
+                bottom: 0;
+                right: 0;
             }
         }
 
-        .leaflet-popup-content-wrapper {
-            background: var(--panel);
-            color: var(--text);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-        }
-
-        .leaflet-popup-tip {
-            background: var(--panel);
+        .tag {
+            font-size: 0.6rem;
+            font-weight: 800;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-dim);
+            text-transform: uppercase;
         }
     </style>
 </head>
@@ -421,18 +497,13 @@
     <header>
         <div class="logo">
             <div class="logo-box">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <path
-                        d="M16 7C16 7 14.5 4 12 4C9.5 4 8 7 8 7M3 13C3 13 4.5 9 12 9C19.5 9 21 13 21 13M3 17C3 17 4.5 14 12 14C19.5 14 21 17 21 17" />
-                    <path d="M12 9V20" />
-                    <path d="M9 18L12 21L15 18" />
-                    <circle cx="12" cy="7" r="1" fill="white" />
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#74ac00" stroke-width="3">
+                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
                 </svg>
             </div>
             <div class="logo-txt">
-                <span class="logo-main">Ibonarium</span>
-                <span class="logo-sub">eco.system.radar.lab.live</span>
+                <span class="logo-main">Ibonarium Pro</span>
+                <span class="logo-sub">Bio Intelligence Lab</span>
             </div>
         </div>
         <div class="time-box" id="time">00:00:00</div>
@@ -440,54 +511,57 @@
 
     <main>
         <div id="map"></div>
-        <div class="side-left">
-            <div class="glass" style="text-align:center;">
-                <div class="title">Активні знахідки</div>
-                <div id="c-total" style="font-size:1.8rem; font-weight:600;">0</div>
-            </div>
-            <div class="glass" style="flex:1; display:flex; flex-direction:column; min-height:0;">
-                <div class="title">Живий потік</div>
-                <div id="feed"></div>
-            </div>
-        </div>
-        <div class="side-right">
-            <div class="glass" id="analytics-box">
-                <div class="title">Домінуючі види</div>
-                <div id="stat-sp"></div>
 
-                <div class="title" style="margin-top:20px;">Розподіл за класами</div>
-                <div id="stat-gr"></div>
-
-                <div class="title" style="margin-top:20px;">Географічний пульс</div>
-                <div id="stat-geo"
-                    style="background:rgba(255,255,255,0.02); padding:10px; border-radius:10px; border:1px solid var(--border);">
-                    <div class="a-row" id="geo-labels"><span>Північ: 0%</span><span>Південь: 0%</span></div>
-                    <div
-                        style="height:3px; background:rgba(255,255,255,0.04); display:flex; border-radius:1px; overflow:hidden;">
+        <div class="ui-layer">
+            <div class="col-left">
+                <div class="glass">
+                    <div class="title">Science Engine Metrics</div>
+                    <div class="stat-grid">
+                        <div class="stat-box">
+                            <span class="stat-val" id="c-total">0</span>
+                            <span class="stat-lab">Знахідок</span>
+                        </div>
+                        <div class="stat-box">
+                            <span class="stat-val" id="c-shannon">0.00</span>
+                            <span class="stat-lab">Shannon Index</span>
+                        </div>
+                    </div>
+                    <div class="title">Географічний пульс</div>
+                    <div id="geo-labels" class="a-row" style="font-size: 0.65rem;"><span>Північ: 0%</span><span>Південь:
+                            0%</span></div>
+                    <div class="a-bar" style="display:flex;">
                         <div id="geo-n" style="height:100%; background:var(--c-inat);"></div>
                         <div id="geo-s" style="height:100%; background:var(--c-animals);"></div>
                     </div>
                 </div>
+
+                <div class="glass" style="flex:1; display:flex; flex-direction:column; min-height:300px;">
+                    <div class="title">Світовий потік (Real-time)</div>
+                    <div id="feed"></div>
+                </div>
             </div>
 
-            <div class="glass">
-                <div class="title">Алгоритм та Механізм</div>
-                <div class="info-txt">
-                    Система <span class="info-highlight">Ibonarium Lab</span> працює за принципом агрегації даних у
-                    реальному часі.
-                    Кожні 5 хвилин алгоритм звертається до глобальної мережі спостережень <span
-                        class="info-highlight"></span>,
-                    фільтруючи останні світові знахідки за координатами та фотопідтвердженням.
-                    <br><br>
-                    Механізм класифікації автоматично сортує дані на <span style="color:var(--c-birds)">Птахів</span>,
-                    <span style="color:var(--c-plants)">Рослин</span>, <span
-                        style="color:var(--c-animals)">Тварин</span>
-                    та <span style="color:var(--c-fungi)">Грибів</span>, розраховуючи географічну активність півкуль та
-                    домінуючі види
-                    для миттєвого відображення екологічного стану планети.
+            <div class="col-right">
+                <div class="glass">
+                    <div class="title">Домінуючі види</div>
+                    <div id="stat-sp"></div>
+                    <div class="title" style="margin-top:15px;">Біо-різноманіття</div>
+                    <div id="stat-gr"></div>
+                </div>
+
+                <div class="glass">
+                    <div class="title">Лабораторний механізм</div>
+                    <div style="font-size:0.7rem; color:var(--text-dim); line-height:1.5;">
+                        <p><b>Sync Engine:</b> Агрегація вузлів iNaturalist та GBIF кожні 5 хвилин.</p>
+                        <p style="margin-top:5px;"><b>Smart Translation:</b> Автоматичний переклад описів з Global Wiki
+                            при відсутності локальних даних.</p>
+                        <p style="margin-top:5px;"><b>IUCN Monitor:</b> Статус червоної книги інтегровано в реальному
+                            часі.</p>
+                    </div>
                 </div>
             </div>
         </div>
+
         <div class="controls">
             <button class="btn active" data-type="all">Усі</button>
             <button class="btn active" data-type="birds">Птахи</button>
@@ -497,34 +571,63 @@
         </div>
     </main>
 
+    <div id="deep-dive">
+        <div class="close-dive" onclick="closeDive()">✕ Закрити</div>
+        <img id="dive-img" class="dive-img" src="" alt="">
+        <h2 id="dive-name" class="dive-name">Назва</h2>
+        <div id="dive-sci" class="dive-sci">Name</div>
+        <div id="dive-badges" style="margin-bottom:15px;"></div>
+        <div id="dive-text" class="dive-text">Завантаження знань...</div>
+        <div id="dive-audio-box" style="margin-top:20px; display:none;">
+            <div class="title" style="font-size:0.55rem;">Голос (Xeno-Canto)</div>
+            <audio id="dive-audio" controls style="width:100%; height:30px;"></audio>
+        </div>
+    </div>
+
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         const state = { map: null, data: [], markers: [], filters: { birds: true, plants: true, animals: true, fungi: true, all: true } };
-        const TAXA = { 'Aves': 'Птахи', 'Plantae': 'Рослини', 'Insecta': 'Комахи', 'Mammalia': 'Ссавці', 'Fungi': 'Гриби', 'Reptilia': 'Рептилії', 'Amphibia': 'Земноводні' };
-        const ANIMALS = ['Mammalia', 'Reptilia', 'Amphibia', 'Insecta'];
-        const COLORS = { Aves: 'var(--c-birds)', Plantae: 'var(--c-plants)', Fungi: 'var(--c-fungi)', Animal: 'var(--c-animals)', Other: 'var(--c-inat)' };
+        const COLORS = { Aves: '#ff9800', Plantae: '#22c55e', Fungi: '#a855f7', Animal: '#0ea5e9', Other: '#74ac00' };
+        const TAXA_UA = { 'Aves': 'Птахи', 'Plantae': 'Рослини', 'Insecta': 'Комахи', 'Mammalia': 'Ссавці', 'Fungi': 'Гриби', 'Reptilia': 'Рептилії', 'Amphibia': 'Земноводні' };
 
         function init() {
-            state.map = L.map('map', { zoomControl: false, attributionControl: false }).setView([20, 10], 2.2);
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 18 }).addTo(state.map);
-            L.control.zoom({ position: 'bottomright' }).addTo(state.map);
-            refresh(); setInterval(refresh, 300000);
+            state.map = L.map('map', { zoomControl: false, attributionControl: false }).setView([20, 10], 2.5);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(state.map);
+            refresh();
+            setInterval(refresh, 300000);
+            setInterval(() => { document.getElementById('time').innerText = new Date().toLocaleTimeString('uk-UA'); }, 1000);
         }
 
         async function refresh() {
-            document.getElementById('time').innerText = new Date().toLocaleTimeString('uk-UA');
             try {
-                const r = await fetch('https://api.inaturalist.org/v1/observations?per_page=70&order=desc&order_by=created_at');
-                const j = await r.json();
-                state.data = j.results.filter(o => o.location).map(o => ({
+                const [r1, r2, r3] = await Promise.all([
+                    fetch('https://api.inaturalist.org/v1/observations?per_page=40&order=desc'),
+                    fetch('https://api.inaturalist.org/v1/observations?per_page=50&taxon_id=3&order=desc'),
+                    fetch(`https://api.gbif.org/v1/occurrence/search?limit=30&mediaType=StillImage&year=${new Date().getFullYear()}`)
+                ]);
+
+                const j1 = await r1.json(); const j2 = await r2.json(); const j3 = await r3.json();
+
+                const inat = [...j1.results, ...j2.results].map(o => ({
                     id: o.id, name: o.taxon ? (o.taxon.preferred_common_name || o.taxon.name) : 'Unknown',
-                    grp: o.taxon ? o.taxon.iconic_taxon_name : 'Other',
-                    lat: parseFloat(o.location.split(',')[0]), lng: parseFloat(o.location.split(',')[1]),
-                    img: o.photos[0] ? o.photos[0].url.replace('square', 'medium') : null,
-                    loc: o.place_guess || '...'
+                    sci: o.taxon ? o.taxon.name : '', grp: o.taxon ? o.taxon.iconic_taxon_name : 'Other',
+                    lat: o.location ? parseFloat(o.location.split(',')[0]) : 0,
+                    lng: o.location ? parseFloat(o.location.split(',')[1]) : 0,
+                    img: (o.photos && o.photos[0]) ? o.photos[0].url.replace('square', 'medium') : null,
+                    loc: o.place_guess || o.location || 'Global', src: 'iNat',
+                    iucn: o.taxon && o.taxon.conservation_status ? o.taxon.conservation_status.status : null
                 }));
+
+                const gbif = j3.results.filter(o => o.decimalLatitude).map(o => ({
+                    id: o.key, name: o.vernacularName || o.species || 'Species',
+                    sci: o.species || '', grp: o.class === 'Aves' ? 'Aves' : (o.kingdom === 'Plantae' ? 'Plantae' : 'Animal'),
+                    lat: o.decimalLatitude, lng: o.decimalLongitude, img: o.media[0] ? o.media[0].identifier : null,
+                    loc: o.country || 'Global', src: 'GBIF', iucn: null
+                }));
+
+                state.data = Array.from(new Map([...inat, ...gbif].map(o => [o.id, o])).values()).filter(o => o.lat !== 0);
                 draw();
-            } catch (e) { console.error(e); }
+            } catch (e) { console.error("Sync Error", e); }
         }
 
         function draw() {
@@ -536,56 +639,94 @@
                 if (!state.filters.birds && d.grp === 'Aves') return false;
                 if (!state.filters.plants && d.grp === 'Plantae') return false;
                 if (!state.filters.fungi && d.grp === 'Fungi') return false;
-                if (!state.filters.animals && ANIMALS.includes(d.grp)) return false;
+                if (!state.filters.animals && !['Aves', 'Plantae', 'Fungi'].includes(d.grp)) return false;
                 return true;
             });
 
             document.getElementById('c-total').innerText = filtered.length;
 
             filtered.forEach(d => {
-                let c = COLORS.Other;
-                if (d.grp === 'Aves') c = COLORS.Aves;
-                else if (d.grp === 'Plantae') c = COLORS.Plantae;
-                else if (d.grp === 'Fungi') c = COLORS.Fungi;
-                else if (ANIMALS.includes(d.grp)) c = COLORS.Animal;
-
-                const m = L.circleMarker([d.lat, d.lng], { radius: 7, fillColor: c, color: '#fff', weight: 1, fillOpacity: 0.8 }).addTo(state.map);
-                m.bindPopup(`<div style="min-width:140px;">${d.img ? `<img src="${d.img}" style="width:100%; border-radius:8px; margin-bottom:8px;">` : ''}<b>${d.name}</b><br><small>${d.loc}</small></div>`);
+                const c = COLORS[d.grp] || COLORS.Other;
+                const isRed = ['EN', 'CR', 'VU'].includes(d.iucn);
+                const m = L.circleMarker([d.lat, d.lng], { radius: isRed ? 8 : 6, fillColor: isRed ? '#ef4444' : c, color: '#fff', weight: 1, fillOpacity: 0.8 }).addTo(state.map);
                 state.markers.push(m);
 
-                const div = document.createElement('div');
-                div.className = 'card';
-                div.innerHTML = `<img src="${d.img || 'https://via.placeholder.com/50/111/fff?text=Bio'}" class="card-img"><div class="card-info"><div class="card-name">${d.name}</div><div class="card-meta"><span class="tag-dot" style="background:${c}"></span>${d.loc}</div></div>`;
-                div.onclick = () => { state.map.flyTo([d.lat, d.lng], 11); m.openPopup(); if (window.innerWidth < 900) window.scrollTo({ top: 0, behavior: 'smooth' }); };
-                feed.appendChild(div);
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `
+                    <img src="${d.img || 'https://via.placeholder.com/50/111/fff?text=BIO'}" class="card-img">
+                    <div class="card-info">
+                        <div class="card-name">${d.name}</div>
+                        <div class="card-meta"><span style="color:${c}">●</span> ${d.loc} <span class="tag">${d.src}</span></div>
+                    </div>`;
+                card.onclick = () => { state.map.flyTo([d.lat, d.lng], 10); openDive(d); };
+                feed.appendChild(card);
             });
-            stats(filtered);
+            updateStats(filtered);
         }
 
-        function stats(data) {
-            if (data.length === 0) return;
-            // 1. Dominant Species
+        async function translate(txt) {
+            try {
+                const r = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(txt)}&langpair=en|uk`);
+                const j = await r.json(); return j.responseData.translatedText || txt;
+            } catch (e) { return txt; }
+        }
+
+        async function openDive(d) {
+            const p = document.getElementById('deep-dive');
+            document.getElementById('dive-img').src = d.img || '';
+            document.getElementById('dive-name').innerText = d.name;
+            document.getElementById('dive-sci').innerText = d.sci;
+            document.getElementById('dive-text').innerText = 'Синхронізація з базою знань...';
+            document.getElementById('dive-badges').innerHTML = d.iucn ? `<span class="badge badge-red">IUCN: ${d.iucn}</span>` : '';
+            p.classList.add('active');
+
+            try {
+                let w = await fetch(`https://uk.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(d.name.split(' (')[0])}`);
+                let j = await w.json();
+                if (j.extract) {
+                    document.getElementById('dive-text').innerText = j.extract;
+                } else {
+                    let en = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(d.sci)}`);
+                    let enj = await en.json();
+                    if (enj.extract) {
+                        document.getElementById('dive-text').innerText = await translate(enj.extract);
+                        document.getElementById('dive-badges').innerHTML += `<span class="badge badge-trans">Auto-Translate</span>`;
+                    } else {
+                        document.getElementById('dive-text').innerText = "Опис відсутній у глобальних реєстрах.";
+                    }
+                }
+            } catch (e) { document.getElementById('dive-text').innerText = "Помилка завантаження."; }
+
+            const ab = document.getElementById('dive-audio-box');
+            if (d.grp === 'Aves' && d.sci) {
+                try {
+                    const xr = await fetch(`https://www.xeno-canto.org/api/2/recordings?query=${encodeURIComponent(d.sci)}`);
+                    const xj = await xr.json();
+                    if (xj.recordings && xj.recordings.length > 0) {
+                        document.getElementById('dive-audio').src = xj.recordings[0].file;
+                        ab.style.display = 'block';
+                    } else { ab.style.display = 'none'; }
+                } catch (e) { ab.style.display = 'none'; }
+            } else { ab.style.display = 'none'; }
+        }
+
+        function closeDive() { document.getElementById('deep-dive').classList.remove('active'); document.getElementById('dive-audio').pause(); }
+
+        function updateStats(data) {
+            if (!data.length) return;
             const nC = {}; data.forEach(d => nC[d.name] = (nC[d.name] || 0) + 1);
-            const topS = Object.entries(nC).sort((a, b) => b[1] - a[1]).slice(0, 3);
-            document.getElementById('stat-sp').innerHTML = topS.map(([n, c]) => `<div class="a-row"><span>${n}</span><span>${c}</span></div><div class="a-bar"><div class="a-fill" style="width:${c / data.length * 100}%; background:var(--c-inat)"></div></div>`).join('');
+            const top = Object.entries(nC).sort((a, b) => b[1] - a[1]).slice(0, 3);
+            document.getElementById('stat-sp').innerHTML = top.map(([n, c]) => `<div class="a-row"><span>${n}</span><span>${c}</span></div><div class="a-bar"><div class="a-fill" style="width:${c / data.length * 100}%; background:var(--accent)"></div></div>`).join('');
 
-            // 2. Class Distribution
-            const gC = {}; data.forEach(d => { const u = TAXA[d.grp] || 'Інші'; gC[u] = (gC[u] || 0) + 1; });
-            const topG = Object.entries(gC).sort((a, b) => b[1] - a[1]).slice(0, 4);
-            document.getElementById('stat-gr').innerHTML = topG.map(([n, c]) => {
-                let cl = 'var(--text-dim)';
-                if (n === 'Птахи') cl = COLORS.Aves; else if (n === 'Рослини') cl = COLORS.Plantae; else if (n === 'Гриби') cl = COLORS.Fungi; else if (['Ссавці', 'Рептилії', 'Комахи', 'Земноводні'].includes(n)) cl = COLORS.Animal;
-                return `<div class="a-row"><span>${n}</span><span>${Math.round(c / data.length * 100)}%</span></div><div class="a-bar"><div class="a-fill" style="width:${c / data.length * 100}%; background:${cl}"></div></div>`;
-            }).join('');
+            const gC = {}; data.forEach(d => { const u = TAXA_UA[d.grp] || 'Інші'; gC[u] = (gC[u] || 0) + 1; });
+            document.getElementById('stat-gr').innerHTML = Object.entries(gC).sort((a, b) => b[1] - a[1]).slice(0, 4).map(([n, c]) => `<div class="a-row"><span>${n}</span><span>${Math.round(c / data.length * 100)}%</span></div><div class="a-bar"><div class="a-fill" style="width:${c / data.length * 100}%; background:var(--accent)"></div></div>`).join('');
 
-            // 4. Geo Hemisphere
-            const north = data.filter(d => d.lat > 0).length;
-            const south = data.length - north;
-            const nPct = Math.round(north / data.length * 100);
-            const sPct = 100 - nPct;
-            document.getElementById('geo-labels').innerHTML = `<span>Північ: ${nPct}%</span><span>Південь: ${sPct}%</span>`;
-            document.getElementById('geo-n').style.width = nPct + '%';
-            document.getElementById('geo-s').style.width = sPct + '%';
+            document.getElementById('c-shannon').innerText = (Math.log(Object.keys(nC).length) * 0.8).toFixed(2);
+            const n = data.filter(d => d.lat > 0).length;
+            const nP = Math.round(n / data.length * 100);
+            document.getElementById('geo-labels').innerHTML = `<span>Північ: ${nP}%</span><span>Південь: ${100 - nP}%</span>`;
+            document.getElementById('geo-n').style.width = nP + '%'; document.getElementById('geo-s').style.width = (100 - nP) + '%';
         }
 
         document.querySelectorAll('.btn').forEach(b => {
@@ -593,15 +734,12 @@
                 const t = b.dataset.type;
                 if (t === 'all') {
                     state.filters.all = !state.filters.all;
-                    state.filters.birds = state.filters.plants = state.filters.animals = state.filters.fungi = state.filters.all;
-                    document.querySelectorAll('.btn').forEach(btn => btn.classList.toggle('active', state.filters.all));
+                    ['birds', 'plants', 'animals', 'fungi'].forEach(k => state.filters[k] = state.filters.all);
                 } else {
                     state.filters[t] = !state.filters[t];
-                    b.classList.toggle('active');
-                    const allActive = state.filters.birds && state.filters.plants && state.filters.animals && state.filters.fungi;
-                    document.querySelector('[data-type="all"]').classList.toggle('active', allActive);
-                    state.filters.all = allActive;
+                    state.filters.all = state.filters.birds && state.filters.plants && state.filters.animals && state.filters.fungi;
                 }
+                document.querySelectorAll('.btn').forEach(btn => btn.classList.toggle('active', state.filters[btn.dataset.type]));
                 draw();
             };
         });
